@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="project" default="compile" basedir=".">
+   
+	<property name="lib.dir" value="lib"/>
+	<property name="src.dir" value="src"/>
+	<property name="classes.dir" value="build/classes"/>
+		
+	<path id="classpath">
+		 <fileset dir="${lib.dir}" includes="**/*.jar"/>
+	</path>
+	
+	 <target name="clean">
+	        <delete dir="build"/>
+     </target>
+
+    <target name="compile">
+        <mkdir dir="build/classes"/>
+    	<javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath"/>
+    </target>
+	
+	 <target name="jar" depends="compile">
+        <mkdir dir="build/jar"/>
+        <jar destfile="build/jar/CopyByExifDate.jar" basedir="${classes.dir}">
+        	<archives>
+        	       <zips>
+        	         <fileset dir="${lib.dir}" includes="**/*.jar"/>
+        	       </zips>
+        	</archives>
+        	<manifest>
+                <attribute name="Main-Class" value="CopyByExifDate"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="run" depends="jar">
+        <java jar="build/jar/CopyByExifDate.jar" fork="true">
+        	<classpath>
+        	      <path refid="classpath"/>
+        	      <path location="${jar.dir}/${ant.project.name}.jar"/>
+        	 </classpath>
+        </java>
+    </target>
+
+</project>
