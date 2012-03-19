@@ -13,6 +13,7 @@ import javax.swing.JLabel;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.util.Properties;
 import java.awt.Point;
 import javax.swing.JList;
 
@@ -32,8 +33,6 @@ public class ConfigWindow extends JDialog implements IMessageHandler
 	private final JPanel contentPanel = new JPanel();
 	private JTextField edit_from;
 	private JTextField edit_to;
-	private File _dir_from = new File("/Users/Alek/Pictures/imported_not_sorted");
-	private File _dir_to = new File("/Users/Alek/Pictures/zdjecia");
 	private JButton startButton;
 	private JButton closeButton;
 	private JPanel buttonPane;
@@ -42,6 +41,36 @@ public class ConfigWindow extends JDialog implements IMessageHandler
 	private JLabel lblFrom;
 	private FileRenamingThread _worker_thread;
 	private JList _message_list;
+	private Properties _properties = new Properties();
+	private static String PROPERTY_FILE_NAME = "settings.xml";
+	private static String FROM_DIR_PROPERTY_NAME = "FromDir";
+	private static String TO_DIR_PROPERTY_NAME = "ToDir";
+	
+	private void readProperties()
+	{
+		try
+		{
+			java.io.InputStream fis = new java.io.BufferedInputStream(new java.io.FileInputStream(PROPERTY_FILE_NAME));
+			_properties.loadFromXML(fis);
+		}
+		catch (Exception e)
+		{
+			System.out.println(e.getMessage());
+		}
+	}
+	
+	private void saveProperties()
+	{
+		try
+		{
+			java.io.OutputStream fos = new java.io.BufferedOutputStream(new java.io.FileOutputStream(PROPERTY_FILE_NAME));
+			_properties.storeToXML(fos, "Application settings");
+		}
+		catch (Exception e)
+		{
+			System.out.println(e.getMessage());
+		}
+	}
 	
 	private static File getDir(String start_dir, Component parent)
 	{
@@ -62,6 +91,8 @@ public class ConfigWindow extends JDialog implements IMessageHandler
 	 */
 	public ConfigWindow()
 	{
+		readProperties();
+		
 		addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosed(WindowEvent arg0) 
@@ -97,17 +128,18 @@ public class ConfigWindow extends JDialog implements IMessageHandler
 		
 		edit_from = new JTextField();
 		panel.add(edit_from);
-		edit_from.setText(_dir_from.toString());
+		edit_from.setText(_properties.getProperty(FROM_DIR_PROPERTY_NAME, ""));
 		edit_from.setColumns(10);
 		
 		JButton button_from = new JButton("...");
 		panel.add(button_from);
 		button_from.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				_dir_from = getDir(edit_from.getText(), panel);
-				if (_dir_from != null)
+				File dir_from = getDir(edit_from.getText(), panel);
+				if (dir_from != null)
 				{
-					edit_from.setText(_dir_from.toString());
+					_properties.setProperty(FROM_DIR_PROPERTY_NAME, dir_from.toString());
+					edit_from.setText(dir_from.toString());
 				}
 			}
 		});
@@ -128,17 +160,18 @@ public class ConfigWindow extends JDialog implements IMessageHandler
 		
 		edit_to = new JTextField();
 		panel_1.add(edit_to);
-		edit_to.setText(_dir_to.toString());
+		edit_to.setText(_properties.getProperty(TO_DIR_PROPERTY_NAME, ""));
 		edit_to.setColumns(10);
 		
 		JButton button_to = new JButton("...");
 		panel_1.add(button_to);
 		button_to.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				_dir_to = getDir(edit_to.getText(), panel);
-				if (_dir_to != null)
+				File dir_to = getDir(edit_to.getText(), panel);
+				if (dir_to != null)
 				{
-					edit_to.setText(_dir_to.toString());
+					_properties.setProperty(TO_DIR_PROPERTY_NAME, dir_to.toString());
+					edit_to.setText(dir_to.toString());
 				}
 			}
 		});
@@ -195,13 +228,16 @@ public class ConfigWindow extends JDialog implements IMessageHandler
 			_worker_thread.cancel(false);
 			_worker_thread = null;
 		}
+		saveProperties();
 	}
 	
 	private void startProcessing()
 	{
 		if (_worker_thread == null)
 		{
-			_worker_thread = new FileRenamingThread(_dir_from, _dir_to, this);
+			_worker_thread = new FileRenamingThread(new File(_properties.getProperty(FROM_DIR_PROPERTY_NAME)),
+													new File(_properties.getProperty(TO_DIR_PROPERTY_NAME)),
+													this);
 			_worker_thread.execute();
 		}
 		else
